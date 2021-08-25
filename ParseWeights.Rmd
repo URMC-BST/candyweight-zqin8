@@ -1,0 +1,55 @@
+---
+title: "Extracting Weights from github classroom"
+author: "Andrew McDavid"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ghclass)
+library(dplyr)
+library(tibble)
+library(ggplot2)
+library(yaml)
+```
+
+We will walk through this script at the end of class -- you don't need to do anything with this yourself.
+
+Some of this code will not work unless you have administrator access to the URMC-BST organization.
+
+Who has accepted the assignment?
+```{r}
+repos_accepted = org_repos('URMC-BST', filter = '[Cc]andy[Ww]eight')
+repos_accepted
+```
+
+Crosswalk between repo name and username
+
+```{r}
+repo_collaborators(repos_accepted, include_admins = FALSE)
+```
+
+```{r}
+commits = repo_commits(repos_accepted) %>% filter(login != 'github-classroom[bot]')
+commits
+```
+
+Who has committed besides the classroom[bot]?
+
+
+
+```{r}
+yml_to_tibble = function(yml_string) yaml::read_yaml(textConnection(yml_string)) %>% tibble::as_tibble()
+weights_parsed = purrr::map_dfr(repos_accepted, ~ repo_get_file(.x,  'weight.yml', include_details = FALSE) %>% yml_to_tibble, .id = 'repo')
+```
+
+```{r}
+true_weight = 1000
+```
+
+```{r}
+ggplot(weights_parsed, aes(x = Weight_grams)) + geom_histogram() + geom_vline(xintercept = true_weight)
+```
+
+
